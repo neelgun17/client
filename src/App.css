@@ -1,38 +1,151 @@
-.App {
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+h1 {
+  font-size: 32px;
+  font-weight: bold;
   text-align: center;
+  margin-bottom: 30px;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+form {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+}
+
+label {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+input[type="text"] {
+  font-size: 18px;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 500px;
+}
+
+button {
+  background-color: #68abde;
   color: white;
+  font-size: 18px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
 }
 
-.App-link {
-  color: #61dafb;
+button:hover {
+  background-color: #5d9ac8;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
+
+li {
+  font-size: 20px;
+  padding: 10px 20px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  background-color: #f2f2f2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+li button {
+  background-color: #f44336;
+  color: white;
+  font-size: 18px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+li button:hover {
+  background-color: #e53935;
+}
+
+.games {
+  margin-top: 30px;
+}
+
+.games h2 {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.games ul {
+  padding: 0;
+  margin: 0;
+}
+
+.games li {
+  font-size: 20px;
+  padding: 10px 20px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  background-color: #f2f2f2;
+}
+
+.team-input-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.banner {
+  background-color: #68abde;
+  color: white;
+  padding: 20px;
+  text-align: center;
+}
+
+.banner-title {
+  font-size: 2rem;
+  margin: 0;
+}
+
+.team-oval {
+  display: inline-block;
+  background-color: #878787;
+  border-radius: 50px;
+  padding: 8px 16px;
+  margin: 8px;
+  color: #fff;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.delete-button {
+  background-color: rgb(213, 0, 0);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  /* width: 5px; */
+  /* height: 15px; */
+  font-size: 14px;
+  line-height: 0px;
+}
+
+.delete-button:hover {
+  background-color: rgb(187, 3, 3);
+}
+
