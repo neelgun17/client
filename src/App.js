@@ -1,7 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react'
 import './App.css';
 
+import useAuth from './useAuth';
+
+import './firebse-config';
+// // Initialize Firebase
+// const app = initializeApp(firebaseConfig);
+// const analytics = getAnalytics(app);
+
 function App() {
+  const { currentUser, signUp, signIn, signOutUser } = useAuth();
+
   const [games, setGames] = useState([]);
   const [favoriteTeams, setFavoriteTeams] = useState([]);
   const [newTeam, setNewTeam] = useState('');
@@ -210,6 +219,15 @@ function App() {
     <div>
       <div className="banner">
         <h1 className="banner-title">TeamTracker</h1>
+        {!currentUser && (
+          <button onClick={() => signIn('test@example.com', 'password')}>Sign In</button>
+        )}
+        {currentUser && (
+          <div>
+            <span>Welcome, {currentUser.email}</span>
+            <button onClick={() => signOutUser()}>Sign Out</button>
+            </div>
+        )}
       </div>
       <div className="team-input-container">
         <label htmlFor="teamInput">Add your favorite team: </label>
