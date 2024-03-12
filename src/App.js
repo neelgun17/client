@@ -1,15 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import './App.css';
 
-import useAuth from './useAuth';
-
-import './firebse-config';
-// // Initialize Firebase
-// const app = initializeApp(firebaseConfig);
-// const analytics = getAnalytics(app);
-
 function App() {
-  const { currentUser, signUp, signIn, signOutUser } = useAuth();
 
   const [games, setGames] = useState([]);
   const [favoriteTeams, setFavoriteTeams] = useState([]);
@@ -19,6 +11,7 @@ function App() {
   const [teams, setTeams] = useState([]);
   const inputRef = useRef(null);
   const favoriteTeamsRef = useRef([]);
+  
 
 
   // get teams from different leagues
@@ -114,13 +107,28 @@ function App() {
 
   //get games from backend
   function getGames() {
-    fetch('/games')
-      .then(res => res.json())
-      .then(data => {
-        setGames(data);
+    fetch('http://localhost:5001/games')
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`Server responded with status ${res.status}`);
+        }
+        if (res.headers.get("content-type").includes("application/json")) {
+          return res.json(); // Only parse as JSON if the content-type is correct
+        }
+        throw new Error("Received non-JSON response from server");
       })
-      .catch(error => console.error(error));
-  };
+      .then(data => {
+        // Processing data
+        if (data.length === 1 && data[0].message) {
+          console.log(data[0].message);
+          setGames([]);
+        } else {
+          setGames(data.map(item => item.game));
+        }
+      })
+      .catch(error => console.error("Error fetching games:", error));
+  }
+  
 
   //adds team to favorite team
   function AddTeam() {
@@ -147,7 +155,7 @@ function App() {
 
   // send updated list of favorite team to backend using post
   function sendFavoriteTeams(updatedTeams) {
-    fetch('/favorite_teams', {
+    fetch('http://localhost:5001/favorite_teams', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -219,15 +227,6 @@ function App() {
     <div>
       <div className="banner">
         <h1 className="banner-title">TeamTracker</h1>
-        {!currentUser && (
-          <button onClick={() => signIn('test@example.com', 'password')}>Sign In</button>
-        )}
-        {currentUser && (
-          <div>
-            <span>Welcome, {currentUser.email}</span>
-            <button onClick={() => signOutUser()}>Sign Out</button>
-            </div>
-        )}
       </div>
       <div className="team-input-container">
         <label htmlFor="teamInput">Add your favorite team: </label>
