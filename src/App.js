@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react'
 import './App.css';
 
+import { auth, firestore } from './firebase-config';
+import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
+import { collection, getDocs, addDoc, doc, deleteDoc } from 'firebase/firestore';
+
+
+
 function App() {
 
   const [games, setGames] = useState([]);
@@ -11,7 +17,36 @@ function App() {
   const [teams, setTeams] = useState([]);
   const inputRef = useRef(null);
   const favoriteTeamsRef = useRef([]);
-  
+
+  const signIn = async (e) => {
+    e.preventDefault(); // Prevent form submission reload
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      console.log("Signed in as:", userCredential.user);
+    } catch (error) {
+      console.error("Error signing in:", error.message);
+    }
+  };
+
+
+  // for firebase
+  const [user, setUser] = useState(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        // Fetch favorite teams from Firestore
+        fetchFavoriteTeams(currentUser);
+      } else {
+        setFavoriteTeams([]);
+      }
+    });
+    return () => unsubscribe(); // Clean up the subscription
+  }, []);
+
 
 
   // get teams from different leagues
@@ -78,24 +113,33 @@ function App() {
 
   }, []);
 
-  useEffect(() => {
-    const inputField = document.getElementById('teaminput');
+  //replace fetchTeamsIfRequired with this from firebase 
+  const fetchFavoriteTeams = async (user) => {
+    const teamsRef = collection(firestore, "users", user.uid, "favoriteTeams");
+    const snapshot = await getDocs(teamsRef);
+    const teamsList = snapshot.docs.map(doc => doc.data().name);
+    setFavoriteTeams(teamsList);
+  };
 
-    const handleInput = (event) => {
-      const input = event.target.value;
-      const filteredTeams = teams.filter((team) =>
-        team.toLowerCase().includes(input)
-      );
-      setMatchingTeams(filteredTeams);
-      setNewTeam(input);
-    };
 
-    inputField.addEventListener('input', handleInput);
+  // useEffect(() => {
+  //   const inputField = document.getElementById('teaminput');
 
-    return () => {
-      inputField.removeEventListener('input', handleInput);
-    };
-  }, [matchingTeams]);
+  //   const handleInput = (event) => {
+  //     const input = event.target.value;
+  //     const filteredTeams = teams.filter((team) =>
+  //       team.toLowerCase().includes(input)
+  //     );
+  //     setMatchingTeams(filteredTeams);
+  //     setNewTeam(input);
+  //   };
+
+  //   inputField.addEventListener('input', handleInput);
+
+  //   return () => {
+  //     inputField.removeEventListener('input', handleInput);
+  //   };
+  // }, [matchingTeams]);
 
   useEffect(() => {
     const storedFavoriteTeams = JSON.parse(localStorage.getItem('favoriteTeams'));
@@ -128,7 +172,7 @@ function App() {
       })
       .catch(error => console.error("Error fetching games:", error));
   }
-  
+
 
   //adds team to favorite team
   function AddTeam() {
@@ -144,6 +188,17 @@ function App() {
     getGames()
   }
 
+  const addTeamToFirestore = async (teamName) => {
+    if (user) {
+      await addDoc(collection(firestore, "users", user.uid, "favoriteTeams"), { name: teamName });
+      fetchFavoriteTeams(user); // Refresh the favorite teams
+      getGames()
+    }
+  };
+
+
+
+
   //deletes team from favorite team
   const handleDeleteTeam = (team) => {
     const updatedTeams = favoriteTeams.filter(t => t !== team);
@@ -151,6 +206,20 @@ function App() {
     favoriteTeamsRef.current = updatedTeams;
     sendFavoriteTeams(updatedTeams)
     getGames();
+  };
+  const deleteTeamFromFirestore = async (teamName) => {
+    if (user) {
+      // You'll need to adjust this to find the document ID for the team
+      // This is a simplified example
+      const querySnapshot = await getDocs(collection(firestore, "users", user.uid, "favoriteTeams"));
+      querySnapshot.forEach((doc) => {
+        if (doc.data().name === teamName) {
+          deleteDoc(doc.ref);
+        }
+      });
+      fetchFavoriteTeams(user); // Refresh the favorite teams
+      getGames()
+    }
   };
 
   // send updated list of favorite team to backend using post
@@ -176,11 +245,11 @@ function App() {
 
   // add team when enter key is pressed
   const handleKeyPress = (event) => {
-    if (event.key === 'Enter') {
-      AddTeam();
+    if (event.key === 'Enter' && newTeam.trim() !== '') {
+      event.preventDefault(); // Prevent form submission
+      addTeamToFirestore(newTeam);
     }
   };
-
 
 
   const handleTeamSelection = (team) => {
@@ -225,52 +294,85 @@ function App() {
 
   return (
     <div>
-      <div className="banner">
-        <h1 className="banner-title">TeamTracker</h1>
-      </div>
-      <div className="team-input-container">
-        <label htmlFor="teamInput">Add your favorite team: </label>
-        <input
-          type="text"
-          id="teaminput"
-          placeholder="Enter your favorite team"
-          value={newTeam}
-          onChange={e => setNewTeam(e.target.value)}
-          onKeyPress={handleKeyPress}
-          ref={inputRef}
-        />
-        <ul id="team-list">
-          {matchingTeams.slice(0, 4).map((team, index) => {
-            const isFavorite = favoriteTeams.includes(team);
-            return (
-              <li
-                key={index}
-                onClick={() => handleTeamSelection(team)}
-              >
-                {team} {isFavorite ? <span>&#9733;</span> : <span>&#9734;</span>}
-              </li>
-            );
-          })}
-        </ul>
-        <button onClick={AddTeam}>Add</button>
-      </div>
-      <h1 className="title">Your Teams</h1>
-      <ul>
-        {favoriteTeams.map((team, index) => (
-          <div key={index} className="team-oval">
-            {team}
-            <button
-              className="delete-button"
-              onClick={() => handleDeleteTeam(team)}>x</button>
+      {!user ? (
+        // Sign-in form
+        <div className="sign-in-container">
+          <h2>Sign In</h2>
+          <form onSubmit={signIn}>
+            <div>
+              <label>Email:</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label>Password:</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            <button type="submit">Sign In</button>
+          </form>
+        </div>
+      ) : (
+        // Main content of the app
+        <>
+          <div className="banner">
+            <h1 className="banner-title">TeamTracker</h1>
           </div>
-        ))}
-      </ul>
-      <h1>Todays Games</h1>
-      {games.map((game, index) => (
-        <div className="team-input-container" key={index}>{game}</div>
-      ))}
+          {/* Existing App content */}
+          <div className="team-input-container">
+            <label htmlFor="teamInput">Add your favorite team: </label>
+            <input
+              type="text"
+              id="teaminput"
+              placeholder="Enter your favorite team"
+              value={newTeam}
+              onChange={(e) => setNewTeam(e.target.value)}
+              onKeyPress={handleKeyPress}
+              ref={inputRef}
+            />
+            <ul id="team-list">
+              {matchingTeams.slice(0, 4).map((team, index) => {
+                const isFavorite = favoriteTeams.includes(team);
+                return (
+                  <li
+                    key={index}
+                    onClick={() => handleTeamSelection(team)}
+                  >
+                    {team} {isFavorite ? <span>&#9733;</span> : <span>&#9734;</span>}
+                  </li>
+                );
+              })}
+            </ul>
+            <button onClick={addTeamToFirestore}>Add</button>
+          </div>
+          <h1 className="title">Your Teams</h1>
+          <ul>
+            {favoriteTeams.map((team, index) => (
+              <div key={index} className="team-oval">
+                {team}
+                <button
+                  className="delete-button"
+                  onClick={() => deleteTeamFromFirestore(team)}>x</button>
+              </div>
+            ))}
+          </ul>
+          <h1>Today's Games</h1>
+          {games.map((game, index) => (
+            <div className="team-input-container" key={index}>{game}</div>
+          ))}
+        </>
+      )}
     </div>
-  )
+  );
+
 }
 
 export default App
